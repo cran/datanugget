@@ -1,4 +1,5 @@
 create.DNcenters = function(RS,
+                            delete.percent,
                             DN.num,
                             dist.metric,
                             make.pb = FALSE){
@@ -46,7 +47,7 @@ create.DNcenters = function(RS,
     while (tmp.num > DN.num){
 
       # retrieve the number of entries to delete (i.e. 10% of the current number of entries)
-      delete.num = tmp.num%/%10
+      delete.num = tmp.num%/%(1/delete.percent)
 
       # check if the current delete.num would cause too many entries to be deleted
       if((tmp.num - DN.num) <= delete.num){

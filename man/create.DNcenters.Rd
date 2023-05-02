@@ -9,6 +9,7 @@ This function creates the centers of data nuggets from a random sample.
 }
 \usage{
 create.DNcenters(RS,
+                 delete.percent,
                  DN.num,
                  dist.metric,
                  make.pb = FALSE)
@@ -19,6 +20,11 @@ create.DNcenters(RS,
   \item{RS}{
 A data matrix (data frame, data table, matrix, etc) containing only entries of class numeric.
 }
+
+  \item{delete.percent}{
+The proportion of observations to remove from the data matrix at each iteration when finding data nugget centers. Must be of class numeric and within (0,1).
+}
+
 
   \item{DN.num}{
 The number of data nuggets to create. Must be of class numeric.
@@ -43,7 +49,9 @@ This function is used for reducing a random sample to data nugget centers in the
 
 }
 \references{
-Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication, 2019)
+Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
+
+Beavers, T., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., Teigler, J. (2023). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication)
 }
 \author{
 Traymon Beavers, Javier Cabrera, Mariusz Lubomirski

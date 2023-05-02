@@ -1,5 +1,7 @@
 create.DN = function(x,
-                     RS.num = 2.5*(10^5),
+                     center.method = "mean",
+                     R = 5000,
+                     delete.percent = .1,
                      DN.num1 = 10^4,
                      DN.num2 = 2000,
                      dist.metric = "euclidean",
@@ -18,43 +20,72 @@ create.DN = function(x,
 
   }
 
-  # make sure RS.num is numeric or integer
-  if (class(RS.num) != "numeric" &
-      class(RS.num) != "integer"){
+  # make sure R is a number
+  if (!(class(R) %in% c("numeric",
+                        "integer"))){
 
-    stop('RS.num must be of class "numeric" or "integer"')
+    stop('R must be of class "numeric" or "integer"')
 
   }
 
-  # make sure DN.num1 is numeric or integer
-  if (class(DN.num1) != "numeric" &
-      class(DN.num1) != "integer"){
+  # make sure R is between 100 and 10000
+  if (R < 100 |
+      R > 10000){
+
+    stop('R must be within [100,10000]')
+
+  }
+
+  # make sure center.method is mean or random
+  if (!(center.method %in% c("mean",
+                           "random"))){
+
+    stop('center.method must be "mean" or "random"')
+
+  }
+
+  # make sure delete.percent is a number
+  if (!is.numeric(delete.percent)){
+
+    stop('delete.percent must be of class "numeric"')
+
+  }
+
+  # make sure delete.percent is between 0 and 1
+  if (delete.percent <= 0 |
+      delete.percent >= 1){
+
+    stop('delete.percent must be within (0,1)')
+
+  }
+
+  # make sure DN.num1 is a number
+  if (!(class(DN.num1) %in% c("numeric",
+                            "integer"))){
 
     stop('DN.num1 must be of class "numeric" or "integer"')
 
   }
 
-  # make sure DN.num2 is numeric or integer
-  if (class(DN.num2) != "numeric" &
-      class(DN.num2) != "integer"){
+  # make sure DN.num2 is a number
+  if (!(class(DN.num2) %in% c("numeric",
+                            "integer"))){
 
     stop('DN.num2 must be of class "numeric" or "integer"')
 
   }
 
-  # convert RS.num and DN.num to integers
-  RS.num = floor(RS.num)
-  DN.num1 = floor(DN.num1)
-  DN.num2 = floor(DN.num2)
+  if (DN.num2 > DN.num1){
 
-  # make sure RS.num is less than or equal to the entire sample size
-  if (RS.num > nrow(x)){
-
-    stop(paste('RS.num must be less than ',
-               nrow(x),
-               sep = ""))
+    stop('DN.num2 must be less than DN.num1')
 
   }
+
+  # convert RS.num and DN.num to integers
+  RS.num = floor(nrow(x))
+  R = floor(R)
+  DN.num1 = floor(DN.num1)
+  DN.num2 = floor(DN.num2)
 
   # make sure given distance metric can be used
   if (dist.metric != "euclidean" &
@@ -73,24 +104,23 @@ create.DN = function(x,
   #
   # }
 
-  # make sure seed is numeric or integer
-  if (class(seed) != "numeric" &
-      class(seed) != "integer"){
+  # make sure seed is numeric
+  if (!is.numeric(seed)){
 
-    stop('seed must be of class "numeric" or "integer"')
+    stop('seed must be of class "numeric"')
 
   }
 
   # make sure no.cores is numeric or integer
-  if (class(no.cores) != "numeric" &
-      class(no.cores) != "integer"){
+  if (!(class(no.cores) %in% c("numeric",
+                              "integer"))){
 
     stop('no.cores must be of class "numeric" or "integer"')
 
   }
 
   # make sure make.pbs is TRUE or FALSE
-  if (class(make.pbs) != "logical"){
+  if (!is.logical(make.pbs)){
 
     stop('make.pbs must be TRUE OR FALSE')
 
@@ -119,13 +149,7 @@ create.DN = function(x,
   obs.num = nrow(x)
 
   # create set.num
-  set.num = ifelse(RS.num > 5000,
-                   5000,
-                   ifelse(RS.num > 500,
-                          500,
-                          ifelse(RS.num > 50,
-                                 50,
-                                 5)))
+  set.num = R
 
   # count the number of sets of set.num the random sample will be split into
   RS.splits = RS.num%/%set.num + (RS.num%%set.num > 0)
@@ -154,31 +178,33 @@ create.DN = function(x,
 
       DN.centers1 = foreach(i = 1:RS.splits,
                             .combine = rbind,
+                            .export = "create.DNcenters",
                             .options.snow = opts) %dopar%
 
-                            {
+        {
 
-                              # set the beginning and ends of the random sample selection
-                              RS.loc.start = ((i-1)*set.num)+1
-                              RS.loc.end = ifelse(set.num*i > length(RS.loc),
-                                                  length(RS.loc),
-                                                  set.num*i)
+          # set the beginning and ends of the random sample selection
+          RS.loc.start = ((i-1)*set.num)+1
+          RS.loc.end = ifelse(set.num*i > length(RS.loc),
+                              length(RS.loc),
+                              set.num*i)
 
-                              tmp.RS = x[RS.loc[RS.loc.start:RS.loc.end], ]
+          tmp.RS = x[RS.loc[RS.loc.start:RS.loc.end], ]
 
-                              # retrieve the data nugget centers
-                              output = create.DNcenters(RS = tmp.RS,
-                                                        DN.num = min(c(ceiling(DN.num1/RS.splits),
-                                                                       length(RS.loc.start:RS.loc.end))),
-                                                        dist.metric = dist.metric,
-                                                        make.pb = FALSE)
+          # retrieve the data nugget centers
+          output = create.DNcenters(RS = tmp.RS,
+                                    delete.percent = delete.percent,
+                                    DN.num = min(c(ceiling(DN.num1/RS.splits),
+                                                   length(RS.loc.start:RS.loc.end))),
+                                    dist.metric = dist.metric,
+                                    make.pb = FALSE)
 
-                              output = as.data.frame(output)
+          output = as.data.frame(output)
 
-                              # return the data nugget centers
-                              return(output)
+          # return the data nugget centers
+          return(output)
 
-                            }
+        }
 
       # close the progress bar
       close(pb)
@@ -188,29 +214,30 @@ create.DN = function(x,
       DN.centers1 = foreach(i = 1:RS.splits,
                             .combine = rbind) %dopar%
 
-                            {
+        {
 
-                              # set the beginning and ends of the random sample selection
-                              RS.loc.start = ((i-1)*set.num)+1
-                              RS.loc.end = ifelse(set.num*i > length(RS.loc),
-                                                  length(RS.loc),
-                                                  set.num*i)
+          # set the beginning and ends of the random sample selection
+          RS.loc.start = ((i-1)*set.num)+1
+          RS.loc.end = ifelse(set.num*i > length(RS.loc),
+                              length(RS.loc),
+                              set.num*i)
 
-                              tmp.RS = x[RS.loc[RS.loc.start:RS.loc.end], ]
+          tmp.RS = x[RS.loc[RS.loc.start:RS.loc.end], ]
 
-                              # retrieve the data nugget centers
-                              output = create.DNcenters(RS = tmp.RS,
-                                                        DN.num = min(c(ceiling(DN.num1/RS.splits),
-                                                                       length(RS.loc.start:RS.loc.end))),
-                                                        dist.metric = dist.metric,
-                                                        make.pb = FALSE)
+          # retrieve the data nugget centers
+          output = create.DNcenters(RS = tmp.RS,
+                                    delete.percent = delete.percent,
+                                    DN.num = min(c(ceiling(DN.num1/RS.splits),
+                                                   length(RS.loc.start:RS.loc.end))),
+                                    dist.metric = dist.metric,
+                                    make.pb = FALSE)
 
-                              output = as.data.frame(output)
+          output = as.data.frame(output)
 
-                              # return the data nugget centers
-                              return(output)
+          # return the data nugget centers
+          return(output)
 
-                            }
+        }
 
     }
 
@@ -239,6 +266,7 @@ create.DN = function(x,
 
         # retrieve the data nugget centers
         output = create.DNcenters(RS = tmp.RS,
+                                  delete.percent = delete.percent,
                                   DN.num = min(c(ceiling(DN.num1/RS.splits),
                                                  length(RS.loc.start:RS.loc.end))),
                                   dist.metric = dist.metric,
@@ -272,6 +300,7 @@ create.DN = function(x,
 
         # retrieve the data nugget centers
         output = create.DNcenters(RS = tmp.RS,
+                                  delete.percent = delete.percent,
                                   DN.num = min(c(ceiling(DN.num1/RS.splits),
                                                  length(RS.loc.start:RS.loc.end))),
                                   dist.metric = dist.metric,
@@ -292,6 +321,7 @@ create.DN = function(x,
   message("creating final set of data nugget centers...")
 
   DN.data = create.DNcenters(RS = DN.centers1,
+                             delete.percent = delete.percent,
                              DN.num = DN.num2,
                              dist.metric = dist.metric,
                              make.pb = make.pbs)
@@ -303,51 +333,112 @@ create.DN = function(x,
   # assign the observations to data nuggets
   message("assigning observations to data nuggets...")
 
-  if (ncol(x) == 1){
+  if (no.cores != 0){
 
-    DN.assignments = apply(X = x,
-                           MARGIN = 1,
-                           FUN = function(input){
+    parallel::clusterExport(cl = cl,
+                  varlist = c("dist.metric",
+                              "DN.data"),
+                  envir = environment())
 
-                             # apply the given distance metric for assignment
-                             if (dist.metric == "euclidean"){
+    if (ncol(x) == 1){
 
-                               return(as.numeric(which.min((t(DN.data) - input)^2)))
+      DN.assignments = parallel::parApply(cl = cl,
+                                X = x,
+                                MARGIN = 1,
+                                FUN = function(input){
 
-                             }else if (dist.metric == "manhattan"){
+                                  # apply the given distance metric for assignment
+                                  if (dist.metric == "euclidean"){
 
-                               return(as.numeric(which.min(abs((t(DN.data) - input)))))
+                                    return(as.numeric(which.min((t(DN.data) - input)^2)))
 
-                               # }else if (dist.metric == "minkowski"){
-                               #
-                               #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
+                                  }else if (dist.metric == "manhattan"){
 
-                             }
+                                    return(as.numeric(which.min(abs((t(DN.data) - input)))))
 
-                           })
+                                    # }else if (dist.metric == "minkowski"){
+                                    #
+                                    #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
+
+                                  }
+
+                                })
+
+    }else{
+
+      DN.assignments = parallel::parApply(cl = cl,
+                                X = x,
+                                MARGIN = 1,
+                                FUN = function(input){
+
+                                  # apply the given distance metric for assignment
+                                  if (dist.metric == "euclidean"){
+
+                                    return(as.numeric(which.min(colSums((t(DN.data) - input)^2))))
+
+                                  }else if (dist.metric == "manhattan"){
+
+                                    return(as.numeric(which.min(colSums(abs((t(DN.data) - input))))))
+
+                                    # }else if (dist.metric == "minkowski"){
+                                    #
+                                    #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
+
+                                  }
+
+                                })
+
+    }
 
   }else{
 
-    DN.assignments = apply(X = x,
-                           MARGIN = 1,
-                           FUN = function(input){
+    if (ncol(x) == 1){
 
-                             # apply the given distance metric for assignment
-                             if (dist.metric == "euclidean"){
+      DN.assignments = apply(X = x,
+                             MARGIN = 1,
+                             FUN = function(input){
 
-                               return(as.numeric(which.min(colSums((t(DN.data) - input)^2))))
+                               # apply the given distance metric for assignment
+                               if (dist.metric == "euclidean"){
 
-                             }else if (dist.metric == "manhattan"){
+                                 return(as.numeric(which.min((t(DN.data) - input)^2)))
 
-                               return(as.numeric(which.min(colSums(abs((t(DN.data) - input))))))
+                               }else if (dist.metric == "manhattan"){
 
-                               # }else if (dist.metric == "minkowski"){
-                               #
-                               #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
+                                 return(as.numeric(which.min(abs((t(DN.data) - input)))))
 
-                             }
+                                 # }else if (dist.metric == "minkowski"){
+                                 #
+                                 #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
 
-                           })
+                               }
+
+                             })
+
+    }else{
+
+      DN.assignments = apply(X = x,
+                             MARGIN = 1,
+                             FUN = function(input){
+
+                               # apply the given distance metric for assignment
+                               if (dist.metric == "euclidean"){
+
+                                 return(as.numeric(which.min(colSums((t(DN.data) - input)^2))))
+
+                               }else if (dist.metric == "manhattan"){
+
+                                 return(as.numeric(which.min(colSums(abs((t(DN.data) - input))))))
+
+                                 # }else if (dist.metric == "minkowski"){
+                                 #
+                                 #   return(as.numeric(which.min((colSums(abs((t(DN.data) - input))^minkowski.p))^(1/minkowski.p))))
+
+                               }
+
+                             })
+
+    }
 
   }
 
@@ -396,145 +487,10 @@ create.DN = function(x,
       # recalculate the center and calculate the shape parameter for each data nugget
       for.params = foreach(i = 1:DN.num2,
                            .combine = rbind,
+                           .export = "create.DNcenters",
                            .options.snow = opts)  %dopar%
 
-                           {
-
-                             # extract the row locations of the data points assigned to the current data nugget
-                             tmp.extract = which(DN.assignments == i)
-
-                             if (ncol(x) == 1){
-
-                               # check if there is only one data point assigned to this data nugget
-                               if (length(tmp.extract) == 1){
-
-                                 # if so, make the center equal to the lone observation
-                                 output1 = x[tmp.extract, ]
-
-                                 # if so, make the shape parameter missing
-                                 output2 = 0
-
-                               }else{
-
-                                 # otherwise, find the new center
-                                 output1 = mean(x[tmp.extract, ])
-
-                                 # otherwise, find the scale parameter
-                                 output2 = var(x[tmp.extract, ])
-
-                               }
-
-                             }else{
-
-                               # check if there is only one data point assigned to this data nugget
-                               if (length(tmp.extract) == 1){
-
-                                 # if so, make the center equal to the lone observation
-                                 output1 = x[tmp.extract, ]
-
-                                 # if so, make the shape parameter missing
-                                 output2 = 0
-
-                               }else{
-
-                                 # otherwise, find the new center
-                                 output1 = colMeans(x[tmp.extract, ])
-
-                                 # otherwise, find the scale parameter
-                                 output2 = sum(diag(cov(x[tmp.extract, ])))/ncol(x)
-
-                               }
-
-                             }
-
-
-                             # return the center and shape parameters
-                             return(c(as.vector(output1),
-                                      output2))
-
-                           }
-
-      # close the progress bar
-      close(pb)
-
-    }else{
-
-      # recalculate the center and calculate the shape parameter for each data nugget
-      for.params = foreach(i = 1:DN.num2,
-                           .combine = rbind)  %dopar%
-
-                           {
-
-                             # extract the row locations of the data points assigned to the current data nugget
-                             tmp.extract = which(DN.assignments == i)
-
-                             if (ncol(x) == 1){
-
-                               # check if there is only one data point assigned to this data nugget
-                               if (length(tmp.extract) == 1){
-
-                                 # if so, make the center equal to the lone observation
-                                 output1 = x[tmp.extract, ]
-
-                                 # if so, make the shape parameter missing
-                                 output2 = 0
-
-                               }else{
-
-                                 # otherwise, find the new center
-                                 output1 = mean(x[tmp.extract, ])
-
-                                 # otherwise, find the scale parameter
-                                 output2 = var(x[tmp.extract, ])
-
-                               }
-
-                             }else{
-
-                               # check if there is only one data point assigned to this data nugget
-                               if (length(tmp.extract) == 1){
-
-                                 # if so, make the center equal to the lone observation
-                                 output1 = x[tmp.extract, ]
-
-                                 # if so, make the shape parameter missing
-                                 output2 = 0
-
-                               }else{
-
-                                 # otherwise, find the new center
-                                 output1 = colMeans(x[tmp.extract, ])
-
-                                 # otherwise, find the scale parameter
-                                 output2 = sum(diag(cov(x[tmp.extract, ])))/ncol(x)
-
-                               }
-
-                             }
-
-
-                             # return the center and shape parameters
-                             return(c(as.vector(output1),
-                                      output2))
-
-                           }
-
-    }
-
-  }else{
-
-    # check if user wants a progress bar
-    if (make.pbs == TRUE){
-
-      # initialize progress bar
-      pb = txtProgressBar(min = 0,
-                          max = DN.num2)
-
-      # initialize matrix holding new centers and scales
-      for.params = NULL
-
-      # cycle through the final data nuggets
-      for (i in 1:DN.num2){
+        {
 
           # extract the row locations of the data points assigned to the current data nugget
           tmp.extract = which(DN.assignments == i)
@@ -553,7 +509,15 @@ create.DN = function(x,
             }else{
 
               # otherwise, find the new center
-              output1 = mean(x[tmp.extract, ])
+              if (center.method == "mean"){
+
+                output1 = mean(x[tmp.extract, ])
+
+              }else if (center.method == "random"){
+
+                output1 = x[sample(tmp.extract,1), ]
+
+              }
 
               # otherwise, find the scale parameter
               output2 = var(x[tmp.extract, ])
@@ -574,7 +538,15 @@ create.DN = function(x,
             }else{
 
               # otherwise, find the new center
-              output1 = colMeans(x[tmp.extract, ])
+              if (center.method == "mean"){
+
+                output1 = colMeans(x[tmp.extract, ])
+
+              }else if (center.method == "random"){
+
+                output1 = x[sample(tmp.extract,1), ]
+
+              }
 
               # otherwise, find the scale parameter
               output2 = sum(diag(cov(x[tmp.extract, ])))/ncol(x)
@@ -585,13 +557,165 @@ create.DN = function(x,
 
 
           # return the center and shape parameters
-          for.params = rbind(for.params,
-                             c(as.vector(output1),
-                               output2))
-
-          setTxtProgressBar(pb, i)
+          return(c(as.vector(output1),
+                   output2))
 
         }
+
+      # close the progress bar
+      close(pb)
+
+    }else{
+
+      # recalculate the center and calculate the shape parameter for each data nugget
+      for.params = foreach(i = 1:DN.num2,
+                           .combine = rbind)  %dopar%
+
+        {
+
+          # extract the row locations of the data points assigned to the current data nugget
+          tmp.extract = which(DN.assignments == i)
+
+          if (ncol(x) == 1){
+
+            # check if there is only one data point assigned to this data nugget
+            if (length(tmp.extract) == 1){
+
+              # if so, make the center equal to the lone observation
+              output1 = x[tmp.extract, ]
+
+              # if so, make the shape parameter missing
+              output2 = 0
+
+            }else{
+
+              # otherwise, find the new center
+              if (center.method == "mean"){
+
+                output1 = mean(x[tmp.extract, ])
+
+              }else if (center.method == "random"){
+
+                output1 = x[sample(tmp.extract,1), ]
+
+              }
+
+              # otherwise, find the scale parameter
+              output2 = var(x[tmp.extract, ])
+
+            }
+
+          }else{
+
+            # check if there is only one data point assigned to this data nugget
+            if (length(tmp.extract) == 1){
+
+              # if so, make the center equal to the lone observation
+              output1 = x[tmp.extract, ]
+
+              # if so, make the shape parameter missing
+              output2 = 0
+
+            }else{
+
+              # otherwise, find the new center
+              if (center.method == "mean"){
+
+                output1 = colMeans(x[tmp.extract, ])
+
+              }else if (center.method == "random"){
+
+                output1 = x[sample(tmp.extract,1), ]
+
+              }
+
+              # otherwise, find the scale parameter
+              output2 = sum(diag(cov(x[tmp.extract, ])))/ncol(x)
+
+            }
+
+          }
+
+
+          # return the center and shape parameters
+          return(c(as.vector(output1),
+                   output2))
+
+        }
+
+    }
+
+  }else{
+
+    # check if user wants a progress bar
+    if (make.pbs == TRUE){
+
+      # initialize progress bar
+      pb = txtProgressBar(min = 0,
+                          max = DN.num2)
+
+      # initialize matrix holding new centers and scales
+      for.params = NULL
+
+      # cycle through the final data nuggets
+      for (i in 1:DN.num2){
+
+        # extract the row locations of the data points assigned to the current data nugget
+        tmp.extract = which(DN.assignments == i)
+
+        if (ncol(x) == 1){
+
+          # check if there is only one data point assigned to this data nugget
+          if (length(tmp.extract) == 1){
+
+            # if so, make the center equal to the lone observation
+            output1 = x[tmp.extract, ]
+
+            # if so, make the shape parameter missing
+            output2 = 0
+
+          }else{
+
+            # otherwise, find the new center
+            output1 = mean(x[tmp.extract, ])
+
+            # otherwise, find the scale parameter
+            output2 = var(x[tmp.extract, ])
+
+          }
+
+        }else{
+
+          # check if there is only one data point assigned to this data nugget
+          if (length(tmp.extract) == 1){
+
+            # if so, make the center equal to the lone observation
+            output1 = x[tmp.extract, ]
+
+            # if so, make the shape parameter missing
+            output2 = 0
+
+          }else{
+
+            # otherwise, find the new center
+            output1 = colMeans(x[tmp.extract, ])
+
+            # otherwise, find the scale parameter
+            output2 = sum(diag(cov(x[tmp.extract, ])))/ncol(x)
+
+          }
+
+        }
+
+
+        # return the center and shape parameters
+        for.params = rbind(for.params,
+                           c(as.vector(output1),
+                             output2))
+
+        setTxtProgressBar(pb, i)
+
+      }
 
       # close the progress bar
       close(pb)

@@ -10,12 +10,9 @@ This function refines the data nuggets found in an object of class datanugget cr
 \usage{
 refine.DN(x,
           DN,
-          scale.tol = .9,
-          shape.tol = .9,
+          EV.tol = .9,
+          max.splits = 5,
           min.nugget.size = 2,
-          max.nuggets = 10000,
-          scale.max.splits = 5,
-          shape.max.splits = 5,
           seed = 291102,
           no.cores = (detectCores() - 1),
           make.pbs = TRUE)
@@ -30,28 +27,17 @@ A data matrix (data frame, data table, matrix, etc.) containing only entries of 
 An object of class data nugget created using the create.DN function.
 }
 
-  \item{scale.tol}{
-A value designating the percentile for finding the corresponding quantile that will designate how large the data nugget scales can be before it must be split. Must be of class numeric and within (0,1).
+  \item{EV.tol}{
+A value designating the percentile for finding the corresponding quantile that will designate how large the largest eigenvalue of the covariance matrix of a data nugget can be before it must be split. Must be of class numeric and within (0,1).
 }
 
-  \item{shape.tol}{
-A value designating the percentile for finding the corresponding quantile that will designate how large the ratio of the two largest eigenvalues of the covariance matrix of a data nugget can be before it must be split. Must be of class numeric and within (0,1).
+  \item{max.splits}{
+A value designating the maximum amount of attempts that will be made to split data nuggets according to their largest eigenvalue before the algorithm breaks. Must be of class numeric.
 }
+
 
   \item{min.nugget.size}{
 A value designating the minimum amount of observations a data nugget created from a split must contain. Must be of class numeric and greater than 1.
-}
-
-  \item{max.nuggets}{
-A value designating the maximum amount of data nuggets that will be created before the algorithm breaks. Must be of class numeric and greater than the number of data nuggets in argument DN.
-}
-
-  \item{scale.max.splits}{
-A value designating the maximum amount of attempts that will be made to split data nuggets according to their scale before the algorithm breaks. Must be of class numeric.
-}
-
-  \item{shape.max.splits}{
-A value designating the maximum amount of attempts that will be made to split data nuggets according to their shape before the algorithm breaks. Must be of class numeric.
 }
 
   \item{seed}{
@@ -69,9 +55,9 @@ Print progress bars? Must be TRUE or FALSE.
 
 }
 \details{
-Data nuggets can be refined by attempting to make all of the data nugget scales as small as possible and their shapes as spherical as possible. This is achieved by designating a scale tolerance (scale.tol) and a shape tolerance (shape.tol) which is used to give a lower threshold for a data nugget's scale and deviation from sphericity, respectively.
+Data nuggets can be refined by attempting to make all of the data nugget shapes as spherical as possible. This is achieved by designating an eigenvalue tolerance (EV.tol) which is used to give a lower threshold for a data nugget's deviation from sphericity, respectively.
 
-If a data nugget has a scale greater than the quantile associated with the percentile given by scale.tol, this data nugget is split into two smaller data nuggets using K-means clustering. Likewise, if the two largest eigenvalues of a data nugget's covariance matrix have a ratio greater than the quantile associated with the percentile given by shape.tol, this data nugget is split into two smaller data nuggets using K-means clustering.
+If the largest eigenvalue of a data nugget's covariance matrix has a ratio greater than the quantile associated with the percentile given by EV.tol, this data nugget is split into two smaller data nuggets using K-means clustering.
 
 However, if either of the two data nuggets created by this split have less than the designated minimum data nugget size (min.nugget.size), then the split is cancelled and the data nugget remains as is. This function refines data nuggets using Algorithm 2 provided in the reference.
 }
@@ -84,7 +70,9 @@ An object of class datanugget:
 
 }
 \references{
-Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication, 2019)
+Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
+
+Beavers, T., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., Teigler, J. (2023). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication)
 }
 \author{
 Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
@@ -102,14 +90,15 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
 \examples{
 
     ## small example
-    X = cbind.data.frame(rnorm(10^4),
-                         rnorm(10^4),
-                         rnorm(10^4))
+    X = cbind.data.frame(rnorm(10^3),
+                         rnorm(10^3),
+                         rnorm(10^3))
 
     suppressMessages({
 
       my.DN = create.DN(x = X,
-                        RS.num = 10^3,
+                        R = 500,
+                        delete.percent = .1,
                         DN.num1 = 500,
                         DN.num2 = 250,
                         no.cores = 0,
@@ -117,12 +106,9 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
 
       my.DN2 = refine.DN(x = X,
                          DN = my.DN,
-                         scale.tol = .9,
-                         shape.tol = .9,
+                         EV.tol = .9,
                          min.nugget.size = 2,
-                         max.nuggets = 1000,
-                         scale.max.splits = 5,
-                         shape.max.splits = 5,
+                         max.splits = 5,
                          no.cores = 0,
                          make.pbs = FALSE)
 
@@ -134,28 +120,25 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
     \donttest{
 
       ## large example
-      X = cbind.data.frame(rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6))
+      X = cbind.data.frame(rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4))
 
       my.DN = create.DN(x = X,
-                        RS.num = 10^5,
+                        R = 5000,
+                        delete.percent = .9,
                         DN.num1 = 10^4,
-                        DN.num2 = 2000)
-
-      my.DN$`Data Nuggets`
-      my.DN$`Data Nugget Assignments`
+                        DN.num2 = 2000,
+                        no.cores = 2)
 
       my.DN2 = refine.DN(x = X,
-                   DN = my.DN,
-                   scale.tol = .9,
-                   shape.tol = .9,
-                   min.nugget.size = 2,
-                   max.nuggets = 10000,
-                   scale.max.splits = 5,
-                   shape.max.splits = 5)
+                         DN = my.DN,
+                         EV.tol = .9,
+                         min.nugget.size = 2,
+                         max.splits = 5,
+                         no.cores = 2)
 
       my.DN2$`Data Nuggets`
       my.DN2$`Data Nugget Assignments`

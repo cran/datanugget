@@ -1,5 +1,5 @@
 exportPattern("^[[:alpha:]]+")
-importFrom("stats", "cov", "dist", "kmeans", "median", "var", "quantile")
+importFrom("stats", "cov", "dist","kmeans", "median", "var", "quantile")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
 importFrom("doSNOW", "registerDoSNOW")
 importFrom("foreach", "%dopar%", "foreach")

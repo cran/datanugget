@@ -9,7 +9,9 @@ This function draws a random sample of observations from a large dataset and cre
 }
 \usage{
 create.DN(x,
-          RS.num = 2.5*(10^5),
+          center.method = "mean",
+          R = 5000,
+          delete.percent = .1,
           DN.num1 = 10^4,
           DN.num2 = 2000,
           dist.metric = "euclidean",
@@ -24,8 +26,16 @@ create.DN(x,
 A data matrix (of class matrix, data.frame, or data.table) containing only entries of class numeric.
 }
 
-  \item{RS.num}{
-The number of observations to sample from the data matrix. Must be of class numeric.
+  \item{center.method}{
+The method used for choosing data nugget centers. Must be 'mean' or 'random'. 'mean' chooses the data nugget center to be the mean of all observations within that data nugget, while 'random' chooses the data nugget center to be some random observation within that data nugget.
+}
+
+  \item{R}{
+The number of observations to sample from the data matrix when creating the initial data nugget centers. Must be of class numeric within [100,10000].
+}
+
+  \item{delete.percent}{
+The proportion of observations to remove from the data matrix at each iteration when finding data nugget centers. Must be of class numeric and within (0,1).
 }
 
   \item{DN.num1}{
@@ -65,7 +75,9 @@ An object of class datanugget:
 
 }
 \references{
-Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication, 2019)
+Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
+
+Beavers, T., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., Teigler, J. (2023). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication)
 }
 \author{
 Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
@@ -83,14 +95,15 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
 \examples{
 
       ## small example
-      X = cbind.data.frame(rnorm(10^4),
-                           rnorm(10^4),
-                           rnorm(10^4))
+      X = cbind.data.frame(rnorm(10^3),
+                           rnorm(10^3),
+                           rnorm(10^3))
 
       suppressMessages({
 
         my.DN = create.DN(x = X,
-                          RS.num = 10^3,
+                          R = 500,
+                          delete.percent = .1,
                           DN.num1 = 500,
                           DN.num2 = 250,
                           no.cores = 0,
@@ -104,16 +117,18 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
     \donttest{
 
       ## large example
-      X = cbind.data.frame(rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6),
-                           rnorm(10^6))
+      X = cbind.data.frame(rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4),
+                           rnorm(5*10^4))
 
       my.DN = create.DN(x = X,
-                        RS.num = 10^5,
+                        R = 5000,
+                        delete.percent = .9,
                         DN.num1 = 10^4,
-                        DN.num2 = 2000)
+                        DN.num2 = 2000,
+                        no.cores = 2)
 
       my.DN$`Data Nuggets`
       my.DN$`Data Nugget Assignments`
