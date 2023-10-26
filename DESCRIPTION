@@ -1,16 +1,21 @@
 Package: datanugget
 Type: Package
 Title: Create, and Refine Data Nuggets
-Version: 1.2.1
-Date: 2023-4-10
+Version: 1.2.2
+Date: 2023-10-25
 Authors@R: c(
     person("Yajie", "Duan", email = "yajieritaduan@gmail.com", role = c("cre","ctb")),
     person("Traymon", "Beavers", email = "tray.beavers@gmail.com", role = c("aut")),
     person("Javier", "Cabrera", email = "xavier.cabrera@gmail.com", role = "aut"),
-    person("Mariusz", "Lubomirski", email = "mariusz_lubomirski@yahoo.com", role = "aut"))
+    person("Ge", "Cheng", email = "ge.cheng@outlook.com", role = "aut"),
+    person("Kunting", "Qi", email = "qik@miamioh.edu", role = "aut") ,
+    person("Mariusz", "Lubomirski", email = "mariusz_lubomirski@yahoo.com", role = "aut")
+    )
 Author: Yajie Duan [cre, ctb],
   Traymon Beavers [aut],
   Javier Cabrera [aut],
+  Ge Cheng [aut],
+  Kunting Qi [aut],
   Mariusz Lubomirski [aut]
 Maintainer: Yajie Duan <yajieritaduan@gmail.com>
 Description: Creating, and refining data nuggets. 
@@ -27,14 +32,12 @@ Description: Creating, and refining data nuggets.
     Data nuggets are refined by 'splitting' data nuggets which have scales or 
     shapes (defined as the ratio of the two largest eigenvalues of the 
     covariance matrix of the observations contained within the data nugget) 
-    deemed too large.
+    Reference paper: [1] Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing. [2] Beavers, T., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., Teigler, J. (2023). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication).
 Depends: R (>= 4.0), doSNOW (>= 1.0.16), foreach (>= 1.5.1), parallel
-        (>= 4.0.5)
+        (>= 4.0.5),Rfast(>= 2.0.7)
 License: GPL-2
 Encoding: UTF-8
 NeedsCompilation: no
-Suggests: testthat (>= 3.0.0)
-Config/testthat/edition: 3
-Packaged: 2023-04-27 20:46:52 UTC; yd254
+Packaged: 2023-10-25 16:35:58 UTC; gecheng
 Repository: CRAN
-Date/Publication: 2023-05-02 08:10:09 UTC
+Date/Publication: 2023-10-26 07:30:02 UTC
