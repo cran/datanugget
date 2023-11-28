@@ -1,8 +1,8 @@
 Package: datanugget
 Type: Package
 Title: Create, and Refine Data Nuggets
-Version: 1.2.2
-Date: 2023-10-25
+Version: 1.2.4
+Date: 2023-11-25
 Authors@R: c(
     person("Yajie", "Duan", email = "yajieritaduan@gmail.com", role = c("cre","ctb")),
     person("Traymon", "Beavers", email = "tray.beavers@gmail.com", role = c("aut")),
@@ -38,6 +38,6 @@ Depends: R (>= 4.0), doSNOW (>= 1.0.16), foreach (>= 1.5.1), parallel
 License: GPL-2
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2023-10-25 16:35:58 UTC; gecheng
+Packaged: 2023-11-28 21:55:31 UTC; gecheng
 Repository: CRAN
-Date/Publication: 2023-10-26 07:30:02 UTC
+Date/Publication: 2023-11-28 22:20:07 UTC
