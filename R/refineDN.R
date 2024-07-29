@@ -3,6 +3,7 @@ refine.DN = function(x,
                      EV.tol = .9,
                      max.splits = 5,
                      min.nugget.size = 2,
+                     delta = 2,
                      seed = 291102,
                      no.cores = (detectCores() - 1),
                      make.pbs = TRUE){
@@ -2361,7 +2362,42 @@ refine.DN = function(x,
   # assign the data nugget class to the output
   class(output) = "datanugget"
 
+  # return(output)
+  refineeigen.DN=function(xx,DN,delta=2,minsize=10){
+
+    DN1mm=DN
+    nc = ncol(xx)
+    zz=as.matrix(DN[[1]][,2:(nc+1)])
+    nn= as.vector(DN[[1]][,nc+2])
+    sn= as.vector(DN[[1]][,nc+3])
+    v = as.vector(DN[[2]])
+    sthreshold= median(sn)+2*mad(sn)
+    n = nrow(zz)
+
+    ii  = (1:n)[nn>=minsize]
+    rr= cbind(0*nn,0)
+    for(i in ii ) {
+      zz1=xx[v==i,,drop=F]
+      rr=eigen(var(zz1))
+      if(nrow(zz1)>2)
+        if(rr$val[1]/rr$val[2] > delta | rr$val[1]> sthreshold){
+          iii=kmeans(c(as.matrix(zz1)%*%rr$vectors[,1,drop=F]),2)$clus
+          if (min(table(iii)>1)) {
+            rr=eigen(var(zz1[iii==1,]))$values[1:2]
+            rr1=eigen(var(zz1[iii==2,]))$values[1:2]
+            if( 0.5*(rr[1]/rr[2]+rr1[1]/rr1[2])<delta) {
+              DN1mm[[1]][i,2:(nc+3)] = c(apply(zz1[iii==1,],2,mean),sqrt(rr[1]),sum(iii==1))
+              n= nrow(DN1mm[[1]])
+              DN1mm[[1]] =rbind(DN1mm[[1]], c(n+1,apply(zz1[iii==2,],2,mean),sqrt(rr1[1]),sum(iii==2)))
+              DN1mm[[2]][v==i][iii==2] <- n+1
+              # print(i)
+            }}}}
+    DN1mm
+  }
+
   # return the data nugget dataset
-  return(output)
+  return(refineeigen.DN(x, output,delta = delta))
 
 }
+
+

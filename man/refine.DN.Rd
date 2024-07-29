@@ -13,6 +13,7 @@ refine.DN(x,
           EV.tol = .9,
           max.splits = 5,
           min.nugget.size = 2,
+          delta = 2,
           seed = 291102,
           no.cores = (detectCores() - 1),
           make.pbs = TRUE)
@@ -40,6 +41,10 @@ A value designating the maximum amount of attempts that will be made to split da
 A value designating the minimum amount of observations a data nugget created from a split must contain. Must be of class numeric and greater than 1.
 }
 
+ \item{delta}{
+Ratio between the first and second eigenvalues of the covariance matrix of a data nugget to force its split. Default is 2.
+}
+
   \item{seed}{
 Random seed for replication. Must be of class numeric.
 }
@@ -60,6 +65,8 @@ Data nuggets can be refined by attempting to make all of the data nugget shapes 
 If the largest eigenvalue of a data nugget's covariance matrix has a ratio greater than the quantile associated with the percentile given by EV.tol, this data nugget is split into two smaller data nuggets using K-means clustering.
 
 However, if either of the two data nuggets created by this split have less than the designated minimum data nugget size (min.nugget.size), then the split is cancelled and the data nugget remains as is. This function refines data nuggets using Algorithm 2 provided in the reference.
+
+Updated: When data nuggets are not spherical, with the ratio between the first and second eigenvalues of the covariance matrix of the data nugget is greater than \code{delta} (its default value is 2), the data nugget is split.
 }
 \value{
 An object of class datanugget:
@@ -70,9 +77,9 @@ An object of class datanugget:
 
 }
 \references{
-Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
+Beavers, T. E., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., & Teigler, J. E. (2024). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure. Journal of Computational and Graphical Statistics, 1-21.
 
-Beavers, T., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D., Teigler, J. (2023). Data Nuggets: A Method for Reducing Big Data While Preserving Data Structure (Submitted for Publication)
+Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
 }
 \author{
 Traymon Beavers, Javier Cabrera, Mariusz Lubomirski

@@ -1,23 +1,27 @@
-\name{create.DN}
-\alias{create.DN}
+\name{create_refine.DN}
+\alias{create_refine.DN}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{
-Create Data Nuggets
+Create and Refine Data Nuggets in one function
 }
 \description{
-This function draws a random sample of observations from a large dataset and creates data nuggets, a type of representative sample of the dataset, using a specified distance metric.
+This function combines creating and refining data nuggets in one function. It's a wrapper function for \code{create.DN} and \code{refine.DN}.
 }
 \usage{
-create.DN(x,
-          center.method = "mean",
-          R = 5000,
-          delete.percent = .1,
-          DN.num1 = 10^4,
-          DN.num2 = 2000,
-          dist.metric = "euclidean",
-          seed = 291102,
-          no.cores = (detectCores() - 1),
-          make.pbs = TRUE)
+create_refine.DN(x,
+                 center.method = "mean",
+                 R = 5000,
+                 delete.percent = .1,
+                 DN.num1 = 10^4,
+                 DN.num2 = 2000,
+                 dist.metric = "euclidean",
+                 seed = 291102,
+                 no.cores = (detectCores() - 1),
+                 make.pbs = TRUE,
+                 EV.tol = .9,
+                 max.splits = 5,
+                 min.nugget.size = 2,
+                 delta = 2)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -62,9 +66,26 @@ Number of cores used for parallel processing. If '0' then parallel processing is
 Print progress bars? Must be TRUE or FALSE.
 }
 
+  \item{EV.tol}{
+A value designating the percentile for finding the corresponding quantile that will designate how large the largest eigenvalue of the covariance matrix of a data nugget can be before it must be split. Must be of class numeric and within (0,1).
+}
+
+  \item{max.splits}{
+A value designating the maximum amount of attempts that will be made to split data nuggets according to their largest eigenvalue before the algorithm breaks. Must be of class numeric.
+}
+
+
+  \item{min.nugget.size}{
+A value designating the minimum amount of observations a data nugget created from a split must contain. Must be of class numeric and greater than 1.
+}
+
+ \item{delta}{
+Ratio between the first and second eigenvalues of the covariance matrix of a data nugget to force its split. Default is 2.
+}
+
 }
 \details{
-Data nuggets are a representative sample meant to summarize Big Data by reducing a large dataset to a much smaller dataset by eliminating redundant points while also preserving the peripheries of the dataset. Each data nugget is defined by a center (location), weight (importance), and scale (internal variability). This function creates data nuggets using Algorithm 1 provided in the reference.
+Data nuggets are a representative sample meant to summarize Big Data by reducing a large dataset to a much smaller dataset by eliminating redundant points while also preserving the peripheries of the dataset. Each data nugget is defined by a center (location), weight (importance), and scale (internal variability). This function combines creating and refining data nuggets in one function. It's a wrapper function for \code{create.DN} and \code{refine.DN}.
 }
 \value{
 An object of class datanugget:
@@ -101,13 +122,17 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
 
       suppressMessages({
 
-        my.DN = create.DN(x = X,
+        my.DN = create_refine.DN(x = X,
                           R = 500,
                           delete.percent = .1,
                           DN.num1 = 500,
                           DN.num2 = 250,
                           no.cores = 0,
-                          make.pbs = FALSE)
+                          make.pbs = FALSE,
+                          EV.tol = .9,
+                          min.nugget.size = 2,
+                          max.splits = 5,
+                          delta = 2)
 
       })
 
@@ -123,12 +148,16 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
                            rnorm(5*10^4),
                            rnorm(5*10^4))
 
-      my.DN = create.DN(x = X,
-                        R = 5000,
-                        delete.percent = .9,
-                        DN.num1 = 10^4,
-                        DN.num2 = 2000,
-                        no.cores = 2)
+      my.DN = create_refine.DN(x = X,
+                          R = 5000,
+                          delete.percent = .9,
+                          DN.num1 = 10^4,
+                          DN.num2 = 2000,
+                          no.cores = 2,
+                          EV.tol = .9,
+                          min.nugget.size = 2,
+                          max.splits = 5,
+                          delta = 2)
 
       my.DN$`Data Nuggets`
       my.DN$`Data Nugget Assignments`
@@ -136,13 +165,3 @@ Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
     }
 
 }
-
-
-%% ## The function is currently defined as
-%% function (x)
-%% {
-%% }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-%% \keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-%% \keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
