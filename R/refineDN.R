@@ -2386,12 +2386,15 @@ refine.DN = function(x,
             rr=eigen(var(zz1[iii==1,]))$values[1:2]
             rr1=eigen(var(zz1[iii==2,]))$values[1:2]
             if( 0.5*(rr[1]/rr[2]+rr1[1]/rr1[2])<delta) {
-              DN1mm[[1]][i,2:(nc+3)] = c(apply(zz1[iii==1,],2,mean),sqrt(rr[1]),sum(iii==1))
+              # DN1mm[[1]][i,2:(nc+3)] = c(apply(zz1[iii==1,],2,mean),sum(iii==1), sqrt(rr[1]))
+              DN1mm[[1]][i,2:(nc+3)] = c(apply(zz1[iii==1,],2,mean),sum(iii==1), sum(diag(cov(zz1[iii==1,])))/nc)
               n= nrow(DN1mm[[1]])
-              DN1mm[[1]] =rbind(DN1mm[[1]], c(n+1,apply(zz1[iii==2,],2,mean),sqrt(rr1[1]),sum(iii==2)))
+              # DN1mm[[1]] =rbind(DN1mm[[1]], c(n+1,apply(zz1[iii==2,],2,mean),sum(iii==2),sqrt(rr1[1])))
+              DN1mm[[1]] =rbind(DN1mm[[1]], c(n+1,apply(zz1[iii==2,],2,mean),sum(iii==2),sum(diag(cov(zz1[iii==2,])))/nc))
               DN1mm[[2]][v==i][iii==2] <- n+1
               # print(i)
             }}}}
+    DN1mm[[1]][,nc+2] = as.integer(DN1mm[[1]][,nc+2])
     DN1mm
   }
 
