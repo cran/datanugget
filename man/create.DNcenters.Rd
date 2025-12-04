@@ -9,10 +9,10 @@ This function creates the centers of data nuggets from a random sample.
 }
 \usage{
 create.DNcenters(RS,
-                 delete.percent,
+                 delete.percent = 0.1,
                  DN.num,
-                 dist.metric,
-                 make.pb = FALSE)
+                 dist.metric = "euclidean",
+                 make.pbs = FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -22,7 +22,7 @@ A data matrix (data frame, data table, matrix, etc) containing only entries of c
 }
 
   \item{delete.percent}{
-The proportion of observations to remove from the data matrix at each iteration when finding data nugget centers. Must be of class numeric and within (0,1).
+The proportion of observations to remove from the data matrix at each iteration when finding data nugget centers. Must be of class numeric and within (0,1). Default value is 0.1.
 }
 
 
@@ -31,11 +31,11 @@ The number of data nuggets to create. Must be of class numeric.
 }
 
   \item{dist.metric}{
-The distance metric used to create the initial centers of data nuggets. Must be 'euclidean' or 'manhattan'.
+The distance metric used to create the initial centers of data nuggets. Must be 'euclidean' or 'manhattan'. Default is "euclidean".
 }
 
-  \item{make.pb}{
-Print progress bar? Must be TRUE or FALSE.
+  \item{make.pbs}{
+Logical; whether to show a progress bar while the function runs. Default is FALSE.
 }
 
 
@@ -45,7 +45,7 @@ This function is used for reducing a random sample to data nugget centers in the
 }
 \value{
 
-\item{DN.data}{DN.num by (ncol(RS)) data frame containing the data nugget centers.}
+\item{DN.data}{DN.num by ncol(RS) data frame containing the data nugget centers.}
 
 }
 \references{
@@ -55,7 +55,7 @@ Beavers, T. E., Cheng, G., Duan, Y., Cabrera, J., Lubomirski, M., Amaratunga, D.
 Cherasia, K. E., Cabrera, J., Fernholz, L. T., & Fernholz, R. (2022). Data Nuggets in Supervised Learning. \emph{In Robust and Multivariate Statistical Methods: Festschrift in Honor of David E. Tyler} (pp. 429-449). Cham: Springer International Publishing.
 }
 \author{
-Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
+Rituparna Dey, Traymon Beavers, Javier Cabrera, Mariusz Lubomirski
 }
 %% \note{
 %%  ~~further notes~~
